@@ -40,7 +40,13 @@ import {
     Pencil,
     ExternalLink,
     ChevronDown,
+    Mic,
+    MicOff,
+    Volume2,
+    VolumeX,
 } from "lucide-react";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
 import { signOut } from "@/lib/auth";
 import DaiyLogo from "@/components/DaiyLogo";
 import { useToast } from "@/components/Toast";
@@ -94,6 +100,46 @@ export default function ChatConversationPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [currentModel, setCurrentModel] = useState("llama-3.3-70b-versatile");
     const [extendedThinking, setExtendedThinking] = useState(false);
+    const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
+
+    // Voice hooks
+    const {
+        isListening,
+        isSupported: micSupported,
+        toggleListening,
+    } = useSpeechRecognition({
+        onTranscript: (transcript) => {
+            setInput(transcript);
+            // Auto-resize textarea
+            if (inputRef.current) {
+                inputRef.current.style.height = "auto";
+                inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 200) + "px";
+            }
+        },
+        onError: (error) => toast(error, "error"),
+    });
+
+    const {
+        isSpeaking,
+        isSupported: ttsSupported,
+        toggle: toggleSpeak,
+        stop: stopSpeaking,
+    } = useSpeechSynthesis({
+        rate: 1.0,
+        onEnd: () => setSpeakingMessageId(null),
+        onError: (error) => toast(error, "error"),
+    });
+
+    const handleToggleSpeak = (messageId: string, content: string) => {
+        if (speakingMessageId === messageId) {
+            stopSpeaking();
+            setSpeakingMessageId(null);
+        } else {
+            stopSpeaking();
+            setSpeakingMessageId(messageId);
+            toggleSpeak(content);
+        }
+    };
 
     // Thinking visualization state
     const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
@@ -165,7 +211,7 @@ export default function ChatConversationPage() {
         };
         window.addEventListener("keydown", handleGlobalKeyDown);
         return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sidebarOpen, extendedThinking, user, profile, currentModel]);
 
     // Auth guard
@@ -956,6 +1002,20 @@ export default function ChatConversationPage() {
                                             ) : (
                                                 <p style={{ whiteSpace: "pre-wrap" }}>{msg.content}</p>
                                             )}
+                                            {/* TTS button for assistant messages */}
+                                            {msg.role === "assistant" && ttsSupported && (
+                                                <button
+                                                    className={`voice-btn tts-btn ${speakingMessageId === msg.id ? "speaking" : ""}`}
+                                                    onClick={() => handleToggleSpeak(msg.id, msg.content)}
+                                                    title={speakingMessageId === msg.id ? "Stop reading" : "Read aloud"}
+                                                >
+                                                    {speakingMessageId === msg.id && isSpeaking ? (
+                                                        <VolumeX size={14} />
+                                                    ) : (
+                                                        <Volume2 size={14} />
+                                                    )}
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -1130,6 +1190,32 @@ export default function ChatConversationPage() {
                                 onBlur={(e) => (e.target.style.borderColor = "var(--border-default)")}
                             />
                         </div>
+                        {/* Microphone button */}
+                        {micSupported && (
+                            <button
+                                className={`voice-btn mic-btn ${isListening ? "listening" : ""}`}
+                                onClick={toggleListening}
+                                disabled={isGenerating}
+                                title={isListening ? "Stop recording" : "Voice input"}
+                                style={{
+                                    width: 48,
+                                    height: 48,
+                                    borderRadius: "50%",
+                                    background: isListening ? "rgba(239, 68, 68, 0.15)" : "var(--bg-tertiary)",
+                                    border: isListening ? "2px solid #EF4444" : "1px solid var(--border-default)",
+                                    cursor: isGenerating ? "not-allowed" : "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    transition: "all var(--transition-fast)",
+                                    color: isListening ? "#EF4444" : "var(--text-muted)",
+                                    flexShrink: 0,
+                                    opacity: isGenerating ? 0.5 : 1,
+                                }}
+                            >
+                                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+                            </button>
+                        )}
                         <button
                             onClick={toggleExtendedThinking}
                             className={cn("thinking-toggle", extendedThinking && "active")}
