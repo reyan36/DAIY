@@ -1437,6 +1437,92 @@ pre code {
   }
 }
 
+/* ============================================================
+   Voice Input/Output Buttons
+   ============================================================ */
+
+@keyframes voice-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+@keyframes speaker-glow {
+  0%, 100% { filter: drop-shadow(0 0 0px var(--accent)); }
+  50% { filter: drop-shadow(0 0 6px var(--accent)); }
+}
+
+.voice-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: 'Inter', sans-serif;
+}
+
+.voice-btn:hover {
+  color: var(--text-primary);
+}
+
+/* Mic button — listening state */
+.mic-btn.listening {
+  animation: voice-pulse 1.5s ease-out infinite;
+}
+
+.mic-btn:hover:not(:disabled) {
+  background: var(--bg-elevated) !important;
+  border-color: var(--border-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+.mic-btn.listening:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: #EF4444 !important;
+  color: #EF4444 !important;
+}
+
+/* TTS button on messages */
+.tts-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-default);
+  color: var(--text-muted);
+  margin-top: 8px;
+  opacity: 0;
+  transition: all var(--transition-fast);
+}
+
+/* Show on message hover */
+.markdown-content:hover ~ .tts-btn,
+.tts-btn:hover,
+.tts-btn.speaking {
+  opacity: 1;
+}
+
+/* Always show TTS on touch devices */
+@media (hover: none) {
+  .tts-btn {
+    opacity: 1;
+  }
+}
+
+.tts-btn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tts-btn.speaking {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: var(--accent);
+  color: var(--accent);
+  animation: speaker-glow 2s ease-in-out infinite;
+}
+
 /* Small phones */
 @media (max-width: 400px) {
   .chat-sidebar {
