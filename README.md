@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DAIY — Discover • Adapt • Invent • Yourself
+
+An AI-powered Socratic learning tool that helps you build genuine understanding by **guiding you to answers** instead of giving them to you.
+
+![DAIY Banner](public/daiy-banner.png)
+
+## Features
+
+- **Socratic AI Chat**: Never gives direct answers. It asks questions, challenges assumptions, and guides your thinking.
+- **Breakthrough Detection**: Celebrates when you have a genuine "Aha!" moment.
+- **Reasoning Timeline**: Visualizes your thought process (Question → Assumption → Challenge → Insight).
+- **Multi-Model Support**: Use free models (Gemini Flash, Llama 3 via Groq) or bring your own keys (OpenAI, Anthropic).
+- **Secure Architecture**: API keys are encrypted client-side or stored securely in Firestore (depending on configuration).
+
+## Tech Stack
+
+- **Framework**: Next.js 14+ (App Router)
+- **Styling**: Tailwind CSS + Custom Design System
+- **Database**: Firebase Firestore
+- **Auth**: Firebase Auth (Google + Email)
+- **AI**: Vercel AI SDK patterns (custom implementation for Socratic behavior)
+- **Animations**: Framer Motion & CSS
 
 ## Getting Started
 
-First, run the development server:
+### 1. Prerequisites
+
+- Node.js 18+
+- A Firebase project
+
+### 2. Environment Setup
+
+Copy `.env.local.example` to `.env.local`:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.local.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Fill in your Firebase config and optional service keys:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+# Firebase Client Config (Required)
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+# ... other firebase vars
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Optional Server-Side Keys for Free Tier
+GEMINI_API_KEY=...
+GROQ_API_KEY=...
+```
 
-## Learn More
+### 3. Install Dependencies & Run
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm install
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open [http://localhost:3000](http://localhost:3000) to start learning.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+src/
+├── app/              # Next.js App Router pages
+│   ├── api/          # Backend API routes (chat streaming)
+│   ├── chat/         # Chat interface
+│   ├── login/        # Auth pages
+│   └── settings/     # User preferences
+├── components/       # (Currently inline in pages for speed, will refactor)
+├── context/          # React Context (Auth)
+├── lib/              # Utilities
+│   ├── ai/           # AI provider logic & prompts
+│   ├── firebase.ts   # Firebase initialization
+│   ├── firestore.ts  # Database operations
+│   └── utils.ts      # Helper functions
+└── types/            # TypeScript definitions
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Contributing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Fork the repo
+2. Create a feature branch
+3. Submit a PR
