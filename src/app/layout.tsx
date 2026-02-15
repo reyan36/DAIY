@@ -22,6 +22,10 @@ export const metadata: Metadata = {
     "AI-powered Socratic learning tool that guides you to discover answers yourself. Build real understanding across coding, math, writing, and more.",
   keywords: ["AI learning", "Socratic method", "education", "coding help", "problem solving"],
   authors: [{ name: "DAIY Team" }],
+  icons: {
+    icon: "/daiy-logo-small.png",
+    apple: "/daiy-logo-small.png",
+  },
   openGraph: {
     title: "DAIY — Discover • Adapt • Invent • Yourself",
     description: "AI that teaches you to think, not gives you answers.",
