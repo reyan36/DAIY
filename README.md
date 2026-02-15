@@ -1,85 +1,44 @@
-# DAIY — Discover • Adapt • Invent • Yourself
+# DAIY
 
-An AI-powered Socratic learning tool that helps you build genuine understanding by **guiding you to answers** instead of giving them to you.
+### Discover. Adapt. Invent. Yourself.
 
-![DAIY Banner](public/daiy-banner.png)
+![version 0.1.0](https://img.shields.io/badge/version-0.1.0-green) ![Next.js](https://img.shields.io/badge/Next.js-black?logo=next.js) ![Firebase](https://img.shields.io/badge/Firebase-orange?logo=firebase) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-blue?logo=tailwindcss) ![License MIT](https://img.shields.io/badge/License-MIT-yellow)
+
+---
+
+## Project Overview
+
+DAIY is an AI-powered Socratic learning platform that helps you build genuine understanding by guiding you to answers instead of giving them to you. It asks questions, challenges assumptions, and celebrates your breakthroughs, turning every conversation into a learning experience.
+
+---
 
 ## Features
 
-- **Socratic AI Chat**: Never gives direct answers. It asks questions, challenges assumptions, and guides your thinking.
-- **Breakthrough Detection**: Celebrates when you have a genuine "Aha!" moment.
-- **Reasoning Timeline**: Visualizes your thought process (Question → Assumption → Challenge → Insight).
-- **Multi-Model Support**: Use free models (Gemini Flash, Llama 3 via Groq) or bring your own keys (OpenAI, Anthropic).
-- **Secure Architecture**: API keys are encrypted client-side or stored securely in Firestore (depending on configuration).
+| Feature | Description |
+|---|---|
+| **Socratic AI Chat** | Never gives direct answers. It asks questions, challenges your assumptions, and guides your thinking step by step. |
+| **Breakthrough Detection** | Recognizes and celebrates genuine "Aha!" moments during your learning conversations. |
+| **Reasoning Timeline** | Visualizes your thought process as a timeline from Question to Assumption to Challenge to Insight. |
+| **Multi-Model Support** | Use free models like Groq or bring your own API keys for OpenAI, Anthropic, and Google Gemini. |
+| **Secure Architecture** | API keys are encrypted and stored securely. All sensitive operations are handled server-side. |
 
-## Tech Stack
+---
 
-- **Framework**: Next.js 14+ (App Router)
-- **Styling**: Tailwind CSS + Custom Design System
+## Technologies
+
+The application is built using a modern, scalable, and performance-focused stack:
+
+- **Frontend**: Next.js, React, Tailwind CSS, Lucide React, Framer Motion
+- **Backend**: Next.js API Routes, Firebase Admin SDK
 - **Database**: Firebase Firestore
-- **Auth**: Firebase Auth (Google + Email)
-- **AI**: Vercel AI SDK patterns (custom implementation for Socratic behavior)
-- **Animations**: Framer Motion & CSS
+- **AI Providers**: Google Gemini, Groq, OpenAI, Anthropic
 
-## Getting Started
+---
 
-### 1. Prerequisites
+## Developer
 
-- Node.js 18+
-- A Firebase project
+@Reyan Arshad
 
-### 2. Environment Setup
+## License
 
-Copy `.env.local.example` to `.env.local`:
-
-```bash
-cp .env.local.example .env.local
-```
-
-Fill in your Firebase config and optional service keys:
-
-```env
-# Firebase Client Config (Required)
-NEXT_PUBLIC_FIREBASE_API_KEY=...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
-# ... other firebase vars
-
-# Optional Server-Side Keys for Free Tier
-GEMINI_API_KEY=...
-GROQ_API_KEY=...
-```
-
-### 3. Install Dependencies & Run
-
-```bash
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) to start learning.
-
-## Project Structure
-
-```
-src/
-├── app/              # Next.js App Router pages
-│   ├── api/          # Backend API routes (chat streaming)
-│   ├── chat/         # Chat interface
-│   ├── login/        # Auth pages
-│   └── settings/     # User preferences
-├── components/       # (Currently inline in pages for speed, will refactor)
-├── context/          # React Context (Auth)
-├── lib/              # Utilities
-│   ├── ai/           # AI provider logic & prompts
-│   ├── firebase.ts   # Firebase initialization
-│   ├── firestore.ts  # Database operations
-│   └── utils.ts      # Helper functions
-└── types/            # TypeScript definitions
-```
-
-## Contributing
-
-1. Fork the repo
-2. Create a feature branch
-3. Submit a PR
+Distributed under the MIT License. See LICENSE for more information.
