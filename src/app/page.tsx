@@ -1,100 +1,172 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import {
-  ArrowRight,
-  Sparkles,
-  Target,
-  BookOpen,
-  Code2,
-  PenTool,
-  FlaskConical,
-  ChevronDown,
-  MessageSquare,
-  Lightbulb,
-  Trophy,
-  Zap,
-  Shield,
-  Users,
-  Clock,
-  Brain,
-  CheckCircle,
-} from "lucide-react";
+import { ArrowRight, Trophy } from "lucide-react";
 import DaiyLogo from "@/components/DaiyLogo";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-// Intersection Observer hook for scroll-triggered animations
-function useInView(threshold = 0.15) {
+gsap.registerPlugin(ScrollTrigger);
+
+// ======================================================================
+// Particle Canvas
+// ======================================================================
+function ParticleCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animationId: number;
+    let particles: { x: number; y: number; vx: number; vy: number; r: number; alpha: number }[] = [];
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    };
+
+    const init = () => {
+      resize();
+      const count = Math.min(50, Math.floor((canvas.offsetWidth * canvas.offsetHeight) / 20000));
+      particles = Array.from({ length: count }, () => ({
+        x: Math.random() * canvas.offsetWidth,
+        y: Math.random() * canvas.offsetHeight,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: (Math.random() - 0.5) * 0.25,
+        r: Math.random() * 1.5 + 0.5,
+        alpha: Math.random() * 0.4 + 0.1,
+      }));
+    };
+
+    const draw = () => {
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      ctx.clearRect(0, 0, w, h);
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > w) p.vx *= -1;
+        if (p.y < 0 || p.y > h) p.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(16, 185, 129, ${p.alpha})`;
+        ctx.fill();
+      }
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 100) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(16, 185, 129, ${0.04 * (1 - dist / 100)})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+      animationId = requestAnimationFrame(draw);
+    };
+
+    init();
+    draw();
+    window.addEventListener("resize", init);
+    return () => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener("resize", init);
+    };
+  }, []);
+
+  return (
+    <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} />
+  );
+}
+
+// ======================================================================
+// Demo Chat
+// ======================================================================
+function TypingDemo() {
+  const [phase, setPhase] = useState<"typing" | "toggle" | "sending" | "sent" | "reset">("typing");
+  const [typedText, setTypedText] = useState("");
+  const [deepThinking, setDeepThinking] = useState(false);
+  const [showSent, setShowSent] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const started = useRef(false);
+
+  const fullMessage = "Why does my function return undefined?";
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.unobserve(el);
+        if (entry.isIntersecting && !started.current) {
+          started.current = true;
+          runCycle();
         }
       },
-      { threshold }
+      { threshold: 0.3 }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [threshold]);
+  }, []);
 
-  return { ref, isVisible };
-}
+  function runCycle() {
+    // Phase 1: Type the message
+    setPhase("typing");
+    setTypedText("");
+    setDeepThinking(false);
+    setShowSent(false);
 
-// Animated counter component
-function AnimatedNumber({ target, suffix = "" }: { target: string; suffix?: string }) {
-  const { ref, isVisible } = useInView();
-  return (
-    <span ref={ref} className={isVisible ? "count-animate" : ""} style={{ opacity: isVisible ? 1 : 0 }}>
-      {target}{suffix}
-    </span>
-  );
-}
-
-// Demo chat conversation that auto-plays
-function DemoChat() {
-  const [visibleMessages, setVisibleMessages] = useState(0);
-  const { ref, isVisible } = useInView(0.3);
-
-  useEffect(() => {
-    if (!isVisible) return;
-    const messages = 4;
-    let i = 0;
-    const timer = setInterval(() => {
-      i++;
-      setVisibleMessages(i);
-      if (i >= messages) clearInterval(timer);
-    }, 800);
-    return () => clearInterval(timer);
-  }, [isVisible]);
-
-  const chatMessages = [
-    { role: "user", text: "Why is my for loop printing undefined?" },
-    { role: "ai", text: "Let's trace through this together. What value does your loop variable have on the very first iteration?" },
-    { role: "user", text: "Oh wait... it starts at 1, but my array index starts at 0!" },
-    { role: "ai", tag: "BREAKTHROUGH", text: "Exactly! You just found an off-by-one error. That's one of the most common bugs in programming. How would you fix it?" },
-  ];
+    let charIndex = 0;
+    const typeTimer = setInterval(() => {
+      charIndex++;
+      setTypedText(fullMessage.slice(0, charIndex));
+      if (charIndex >= fullMessage.length) {
+        clearInterval(typeTimer);
+        // Phase 2: Toggle deep thinking after a short pause
+        setTimeout(() => {
+          setPhase("toggle");
+          setDeepThinking(true);
+          // Phase 3: Send after a pause
+          setTimeout(() => {
+            setPhase("sending");
+            setTimeout(() => {
+              setPhase("sent");
+              setShowSent(true);
+              setTypedText("");
+              // Phase 4: Reset and repeat
+              setTimeout(() => {
+                setPhase("reset");
+                setTimeout(() => runCycle(), 800);
+              }, 2500);
+            }, 600);
+          }, 1200);
+        }, 600);
+      }
+    }, 50);
+  }
 
   return (
     <div ref={ref} style={{
-      background: "var(--bg-secondary)",
-      border: "1px solid var(--border-default)",
-      borderRadius: "var(--radius-lg)",
-      padding: "24px",
-      maxWidth: 520,
-      width: "100%",
+      background: "var(--bg-secondary)", border: "1px solid var(--border-default)",
+      borderRadius: 16, padding: 0, maxWidth: 480, width: "100%", overflow: "hidden",
     }}>
-      {/* Chat header */}
-      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", paddingBottom: "14px", borderBottom: "1px solid var(--border-default)" }}>
-        <DaiyLogo size={24} animate={visibleMessages > 0 && visibleMessages < chatMessages.length} />
-        <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)" }}>DAIY Session</span>
+      {/* Window chrome */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: "10px", padding: "14px 20px",
+        borderBottom: "1px solid var(--border-default)",
+      }}>
+        <DaiyLogo size={22} animate={phase === "sending"} />
+        <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)" }}>DAIY</span>
         <div style={{ marginLeft: "auto", display: "flex", gap: "4px" }}>
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#EF4444" }} />
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#F59E0B" }} />
@@ -102,565 +174,434 @@ function DemoChat() {
         </div>
       </div>
 
-      {/* Messages */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "14px", minHeight: 200 }}>
-        {chatMessages.map((msg, i) => {
-          if (i >= visibleMessages) return null;
-          const isUser = msg.role === "user";
-          return (
-            <div
-              key={i}
-              className={isUser ? "bubble-right" : "bubble-left"}
-              style={{
-                display: "flex",
-                gap: "10px",
-                alignItems: "flex-start",
-                animationDelay: `${i * 0.1}s`,
-              }}
-            >
-              {!isUser && <DaiyLogo size={22} />}
-              <div style={{
-                padding: "10px 14px",
-                borderRadius: isUser ? "12px 12px 4px 12px" : "12px 12px 12px 4px",
-                background: isUser ? "var(--bg-tertiary)" : "var(--accent-muted)",
-                border: `1px solid ${isUser ? "var(--border-default)" : "rgba(16,185,129,0.15)"}`,
-                fontSize: "0.8125rem",
-                lineHeight: 1.6,
-                color: "var(--text-primary)",
-                maxWidth: "85%",
-              }}>
-                {"tag" in msg && msg.tag && (
-                  <span style={{
-                    display: "inline-flex", alignItems: "center", gap: "4px",
-                    background: "rgba(16,185,129,0.15)", color: "var(--accent)",
-                    padding: "2px 8px", borderRadius: "var(--radius-full)",
-                    fontSize: "0.6875rem", fontWeight: 600, marginBottom: "6px",
-                  }}>
-                    <Trophy size={10} /> Breakthrough!
-                  </span>
-                )}
-                {msg.text}
-              </div>
-              {isUser && (
-                <div style={{
-                  width: 22, height: 22, borderRadius: "50%",
-                  background: "var(--bg-tertiary)", border: "1px solid var(--border-default)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "0.625rem", fontWeight: 600, color: "var(--text-secondary)", flexShrink: 0,
-                }}>U</div>
-              )}
+      {/* Sent message area */}
+      <div style={{ padding: "20px 20px 16px", minHeight: 80, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+        {showSent && (
+          <div style={{
+            display: "flex", gap: "10px", alignItems: "flex-start", justifyContent: "flex-end",
+            animation: "fade-up 0.3s ease-out",
+          }}>
+            <div style={{
+              padding: "10px 14px", borderRadius: "12px 12px 4px 12px",
+              background: "var(--bg-tertiary)", border: "1px solid var(--border-default)",
+              fontSize: "0.8125rem", lineHeight: 1.6, color: "var(--text-primary)", maxWidth: "85%",
+            }}>
+              {fullMessage}
             </div>
-          );
-        })}
-        {visibleMessages > 0 && visibleMessages < chatMessages.length && (
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            <DaiyLogo size={22} animate />
-            <div style={{ display: "flex", gap: "4px", padding: "8px" }}>
-              <span className="typing-dot" />
-              <span className="typing-dot" />
-              <span className="typing-dot" />
-            </div>
+            <div style={{
+              width: 22, height: 22, borderRadius: "50%", background: "var(--bg-tertiary)",
+              border: "1px solid var(--border-default)", display: "flex", alignItems: "center",
+              justifyContent: "center", fontSize: "0.625rem", fontWeight: 600,
+              color: "var(--text-secondary)", flexShrink: 0,
+            }}>U</div>
           </div>
         )}
+        {showSent && (
+          <div style={{
+            display: "flex", gap: "10px", alignItems: "center", marginTop: 14,
+            animation: "fade-up 0.3s ease-out 0.3s both",
+          }}>
+            <DaiyLogo size={22} animate />
+            <div style={{ display: "flex", gap: "4px", padding: "8px" }}>
+              <span className="typing-dot" /><span className="typing-dot" /><span className="typing-dot" />
+            </div>
+            <span style={{ fontSize: "0.7rem", color: "var(--accent)", fontWeight: 500, opacity: 0.7 }}>Deep thinking...</span>
+          </div>
+        )}
+      </div>
+
+      {/* Input bar */}
+      <div style={{
+        padding: "12px 16px", borderTop: "1px solid var(--border-default)",
+        display: "flex", flexDirection: "column", gap: "10px",
+      }}>
+        {/* Deep thinking toggle */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{
+            width: 32, height: 18, borderRadius: 9,
+            background: deepThinking ? "var(--accent)" : "rgba(255,255,255,0.1)",
+            transition: "background 0.3s ease",
+            position: "relative", cursor: "default",
+          }}>
+            <div style={{
+              width: 14, height: 14, borderRadius: "50%", background: "white",
+              position: "absolute", top: 2,
+              left: deepThinking ? 16 : 2,
+              transition: "left 0.3s ease",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+            }} />
+          </div>
+          <span style={{
+            fontSize: "0.7rem", fontWeight: 600,
+            color: deepThinking ? "var(--accent)" : "var(--text-muted)",
+            transition: "color 0.3s ease",
+            textTransform: "uppercase", letterSpacing: "0.05em",
+          }}>
+            Deep Thinking {deepThinking ? "ON" : "OFF"}
+          </span>
+        </div>
+
+        {/* Input + send */}
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <div style={{
+            flex: 1, padding: "10px 14px", borderRadius: 10,
+            background: "var(--bg-tertiary)", border: "1px solid var(--border-default)",
+            fontSize: "0.8125rem", color: typedText ? "var(--text-primary)" : "var(--text-muted)",
+            minHeight: 20, display: "flex", alignItems: "center",
+          }}>
+            {typedText || "Ask DAIY anything..."}
+            {phase === "typing" && typedText && (
+              <span style={{
+                display: "inline-block", width: 2, height: 16,
+                background: "var(--accent)", marginLeft: 1,
+                animation: "pulse 0.8s ease-in-out infinite",
+              }} />
+            )}
+          </div>
+          <button style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: (phase === "sending" || phase === "sent") ? "var(--accent)" : typedText ? "var(--accent)" : "rgba(255,255,255,0.06)",
+            border: "none", display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "all 0.3s ease", cursor: "default",
+            transform: phase === "sending" ? "scale(0.9)" : "scale(1)",
+          }}>
+            <ArrowRight size={16} style={{ color: typedText || phase === "sent" ? "black" : "var(--text-muted)" }} />
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
+// ======================================================================
+// Main Landing Page
+// ======================================================================
 export default function LandingPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [scrollY, setScrollY] = useState(0);
   const [navScrolled, setNavScrolled] = useState(false);
 
-  // NO auto-redirect — logged-in users should be able to see the landing page
-  // They get a "Go to Chat" button in the nav instead
+  // Refs
+  const heroRef = useRef<HTMLDivElement>(null);
+  const headlineRef = useRef<HTMLHeadingElement>(null);
+  const subtitleRef = useRef<HTMLParagraphElement>(null);
+  const heroCTARef = useRef<HTMLDivElement>(null);
+  const philosophyRef = useRef<HTMLDivElement>(null);
+  const philosophyTextRef = useRef<HTMLParagraphElement>(null);
+  const demoSectionRef = useRef<HTMLDivElement>(null);
+  const demoTextRef = useRef<HTMLDivElement>(null);
+  const demoChatRef = useRef<HTMLDivElement>(null);
+  const horizontalRef = useRef<HTMLDivElement>(null);
+  const horizontalTrackRef = useRef<HTMLDivElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
 
+  // Nav scroll
   useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-      setNavScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setNavScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Section visibility hooks
-  const howItWorks = useInView(0.1);
-  const features = useInView(0.1);
-  const stats = useInView(0.2);
-  const cta = useInView(0.2);
+  // GSAP Animations
+  useEffect(() => {
+    const frameId = requestAnimationFrame(() => {
+      const ctx = gsap.context(() => {
+        // ---- Hero entrance ----
+        const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+        if (headlineRef.current) {
+          const words = headlineRef.current.querySelectorAll(".hero-word");
+          tl.from(words, { y: 60, opacity: 0, duration: 0.6, stagger: 0.1 }, 0.3);
+        }
+        tl.from(subtitleRef.current, { y: 20, opacity: 0, duration: 0.6 }, "-=0.2");
+        tl.from(heroCTARef.current, { y: 20, opacity: 0, duration: 0.6 }, "-=0.3");
+
+        // Hero parallax
+        gsap.to(".hero-bg-orb-1", { y: -120, scrollTrigger: { trigger: heroRef.current, start: "top top", end: "bottom top", scrub: 1 } });
+        gsap.to(".hero-bg-orb-2", { y: 80, scrollTrigger: { trigger: heroRef.current, start: "top top", end: "bottom top", scrub: 1 } });
+
+        // ---- Philosophy text reveal — words fade in on scroll ----
+        if (philosophyTextRef.current) {
+          const words = philosophyTextRef.current.querySelectorAll(".reveal-word");
+          gsap.fromTo(words,
+            { opacity: 0.15 },
+            {
+              opacity: 1,
+              duration: 0.3,
+              stagger: 0.05,
+              ease: "none",
+              scrollTrigger: {
+                trigger: philosophyRef.current,
+                start: "top 70%",
+                end: "bottom 50%",
+                scrub: 1,
+              },
+            }
+          );
+        }
+
+        // ---- Demo section ----
+        if (demoTextRef.current) {
+          gsap.fromTo(demoTextRef.current, { x: -50, opacity: 0 }, {
+            x: 0, opacity: 1, duration: 0.8, ease: "power2.out",
+            scrollTrigger: { trigger: demoSectionRef.current, start: "top 80%", toggleActions: "play none none none" },
+          });
+        }
+        if (demoChatRef.current) {
+          gsap.fromTo(demoChatRef.current, { x: 50, opacity: 0 }, {
+            x: 0, opacity: 1, duration: 0.8, ease: "power2.out",
+            scrollTrigger: { trigger: demoSectionRef.current, start: "top 80%", toggleActions: "play none none none" },
+          });
+        }
+
+        // ---- Horizontal scroll section ----
+        if (horizontalRef.current && horizontalTrackRef.current) {
+          const track = horizontalTrackRef.current;
+          const totalScroll = track.scrollWidth - window.innerWidth;
+
+          gsap.to(track, {
+            x: -totalScroll,
+            ease: "none",
+            scrollTrigger: {
+              trigger: horizontalRef.current,
+              start: "top top",
+              end: () => `+=${totalScroll}`,
+              pin: true,
+              scrub: 1,
+              invalidateOnRefresh: true,
+            },
+          });
+        }
+
+        // ---- CTA ----
+        if (ctaRef.current) {
+          gsap.fromTo(ctaRef.current, { scale: 0.92, opacity: 0 }, {
+            scale: 1, opacity: 1, duration: 0.8, ease: "power2.out",
+            scrollTrigger: { trigger: ctaRef.current, start: "top 85%", toggleActions: "play none none none" },
+          });
+        }
+
+        ScrollTrigger.refresh();
+      });
+
+      (window as unknown as Record<string, unknown>).__gsapCtx = ctx;
+    });
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      const ctx = (window as unknown as Record<string, Record<string, unknown>>).__gsapCtx as gsap.Context | undefined;
+      if (ctx) ctx.revert();
+      ScrollTrigger.getAll().forEach(t => t.kill());
+    };
+  }, []);
+
+  // Magnetic button
+  const handleMagnetic = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    gsap.to(e.currentTarget, { x: (e.clientX - rect.left - rect.width / 2) * 0.15, y: (e.clientY - rect.top - rect.height / 2) * 0.15, duration: 0.3, ease: "power2.out" });
+  }, []);
+  const handleMagneticLeave = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    gsap.to(e.currentTarget, { x: 0, y: 0, duration: 0.5, ease: "elastic.out(1, 0.4)" });
+  }, []);
+
+  // Philosophy text — split into words for per-word reveal
+  const philosophyText = "We believe the best way to learn isn't to be given answers. It's to be asked the right questions. DAIY guides you through problems using the Socratic method — so every breakthrough is yours.";
+  const philosophyWords = philosophyText.split(" ");
+
+  // Horizontal scroll panels — typographic, no cards
+  const panels = [
+    { title: "Coding", question: "Why does my loop skip the last element?", color: "#3B82F6" },
+    { title: "Math", question: "Can you prove this without induction?", color: "#8B5CF6" },
+    { title: "Writing", question: "What makes this argument fall apart?", color: "#F59E0B" },
+    { title: "Science", question: "Which variable did you forget to control?", color: "#EF4444" },
+  ];
 
   return (
-    <div style={{ background: "var(--bg-primary)", minHeight: "100vh" }}>
-      {/* ============ NAVIGATION ============ */}
-      <nav
-        className={`landing-nav ${navScrolled ? "nav-scrolled" : ""}`}
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 50,
-          padding: "14px 32px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          background: navScrolled ? "rgba(0,0,0,0.85)" : "transparent",
-          backdropFilter: navScrolled ? "blur(20px)" : "none",
-          borderBottom: navScrolled ? "1px solid var(--border-default)" : "1px solid transparent",
-          transition: "all 0.3s ease",
-        }}
-      >
+    <div style={{ background: "var(--bg-primary)", minHeight: "100vh", overflowX: "hidden" }}>
+      {/* ============ NAV ============ */}
+      <nav style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
+        padding: "14px 32px", display: "flex", alignItems: "center", justifyContent: "space-between",
+        background: navScrolled ? "rgba(0,0,0,0.85)" : "transparent",
+        backdropFilter: navScrolled ? "blur(20px)" : "none",
+        borderBottom: navScrolled ? "1px solid var(--border-default)" : "1px solid transparent",
+        transition: "all 0.3s ease",
+      }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <DaiyLogo size={32} />
-          <span style={{
-            fontSize: "1.2rem",
-            fontWeight: 700,
-            color: "var(--text-primary)",
-            letterSpacing: "-0.02em",
-          }}>
-            DAIY
-          </span>
+          <span style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>DAIY</span>
         </div>
         <div className="landing-nav-actions" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
           {!loading && user ? (
-            <button
-              className="btn-primary"
-              onClick={() => router.push("/chat")}
-              style={{ padding: "10px 24px" }}
-            >
-              Go to Chat
-              <ArrowRight size={16} />
+            <button className="btn-primary" onClick={() => router.push("/chat")} style={{ padding: "10px 24px" }}>
+              Go to Chat <ArrowRight size={16} />
             </button>
           ) : (
             <>
-              <button
-                className="btn-ghost"
-                onClick={() => router.push("/login")}
-                style={{ padding: "10px 20px" }}
-              >
-                Log in
-              </button>
-              <button
-                className="btn-primary"
-                onClick={() => router.push("/login")}
-                style={{ padding: "10px 24px" }}
-              >
-                Get Started
-                <ArrowRight size={16} />
+              <button className="btn-ghost" onClick={() => router.push("/login")} style={{ padding: "10px 20px" }}>Log in</button>
+              <button className="btn-primary" onClick={() => router.push("/login")} style={{ padding: "10px 24px" }}>
+                Get Started <ArrowRight size={16} />
               </button>
             </>
           )}
         </div>
       </nav>
 
-      {/* ============ HERO SECTION ============ */}
-      <section
-        className="landing-hero"
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          textAlign: "center",
-          padding: "120px 24px 80px",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        {/* Animated background orbs */}
-        <div style={{
-          position: "absolute", top: "15%", left: "5%",
-          width: 500, height: 500, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%)",
-          filter: "blur(80px)",
-          transform: `translateY(${scrollY * 0.08}px)`,
-        }} />
-        <div style={{
-          position: "absolute", bottom: "10%", right: "5%",
-          width: 400, height: 400, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)",
-          filter: "blur(60px)",
-          transform: `translateY(${scrollY * -0.05}px)`,
-        }} />
-        <div style={{
-          position: "absolute", top: "50%", left: "50%",
-          transform: `translate(-50%, -50%) translateY(${scrollY * 0.03}px)`,
-          width: 800, height: 800, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(16,185,129,0.05) 0%, transparent 60%)",
-          filter: "blur(100px)",
-        }} />
+      {/* ============ HERO ============ */}
+      <section ref={heroRef} style={{
+        minHeight: "100vh", display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center", textAlign: "center",
+        padding: "120px 24px 80px", position: "relative", overflow: "hidden",
+      }}>
+        <ParticleCanvas />
+        <div className="hero-bg-orb-1" style={{ position: "absolute", top: "10%", left: "5%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%)", filter: "blur(80px)", pointerEvents: "none" }} />
+        <div className="hero-bg-orb-2" style={{ position: "absolute", bottom: "10%", right: "5%", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)", filter: "blur(60px)", pointerEvents: "none" }} />
 
-        {/* Grid pattern background */}
-        <div style={{
-          position: "absolute", inset: 0,
-          backgroundImage: `
-            linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px)
-          `,
-          backgroundSize: "64px 64px",
-          maskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)",
-          WebkitMaskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)",
-        }} />
-
-        {/* Hero Logo */}
-        <div className="hero-logo-animate" style={{ marginBottom: "32px", position: "relative" }}>
-          <DaiyLogo size={80} />
-          {/* Pulse rings */}
-          <div style={{
-            position: "absolute", inset: -8,
-            border: "1px solid rgba(16,185,129,0.2)",
-            borderRadius: "50%",
-          }} className="ring-pulse" />
-          <div style={{
-            position: "absolute", inset: -20,
-            border: "1px solid rgba(16,185,129,0.1)",
-            borderRadius: "50%",
-            animationDelay: "0.5s",
-          }} className="ring-pulse" />
-        </div>
-
-        {/* Badge */}
-        <div
-          className="animate-fade-up"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "8px 20px",
-            background: "var(--accent-muted)",
-            border: "1px solid rgba(16,185,129,0.2)",
-            borderRadius: "var(--radius-full)",
-            marginBottom: "28px",
-            color: "var(--accent)",
-            fontSize: "0.875rem",
-            fontWeight: 500,
-          }}
-        >
-          <Sparkles size={14} />
-          AI that teaches, not tells
-        </div>
-
-        {/* Main heading */}
-        <h1
-          className="animate-fade-up"
-          style={{
-            fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
-            fontWeight: 700,
-            lineHeight: 1.1,
-            letterSpacing: "-0.03em",
-            maxWidth: 800,
-            marginBottom: "24px",
-            color: "var(--text-primary)",
-            animationDelay: "0.15s",
-            position: "relative",
-          }}
-        >
-          Learn to think,{" "}
-          <span className="gradient-text-animated">
-            not to copy
-          </span>
+        <h1 ref={headlineRef} style={{
+          fontSize: "clamp(3.5rem, 10vw, 8rem)", fontWeight: 800,
+          lineHeight: 0.95, letterSpacing: "-0.05em",
+          maxWidth: 1000, marginBottom: "32px",
+          color: "var(--text-primary)", position: "relative",
+        }}>
+          <span className="hero-word" style={{ display: "inline-block", marginRight: "0.2em" }}>Think</span>
+          <span className="hero-word" style={{ display: "inline-block", marginRight: "0.2em" }}>deeper,</span>
+          <br />
+          <span className="hero-word gradient-text-animated" style={{ display: "inline-block", marginRight: "0.2em" }}>learn</span>
+          <span className="hero-word gradient-text-animated" style={{ display: "inline-block" }}>better.</span>
         </h1>
 
-        {/* Subtitle */}
-        <p
-          className="animate-fade-up"
-          style={{
-            fontSize: "clamp(1.05rem, 2vw, 1.3rem)",
-            color: "var(--text-secondary)",
-            maxWidth: 580,
-            lineHeight: 1.7,
-            marginBottom: "48px",
-            animationDelay: "0.3s",
-            position: "relative",
-          }}
-        >
-          DAIY uses the Socratic method to guide you through problems.
-          No answers given — just the right questions to unlock genuine understanding.
+        <p ref={subtitleRef} style={{
+          fontSize: "clamp(1rem, 1.8vw, 1.2rem)", color: "var(--text-muted)",
+          maxWidth: 420, lineHeight: 1.6, marginBottom: "48px", position: "relative",
+        }}>
+          The AI tutor that asks questions instead of giving answers.
         </p>
 
-        {/* CTA buttons */}
-        <div
-          className="animate-fade-up"
-          style={{
-            display: "flex",
-            gap: "16px",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            animationDelay: "0.45s",
-            position: "relative",
-          }}
-        >
+        <div ref={heroCTARef} style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center", position: "relative" }}>
           <button
             className="btn-primary"
             onClick={() => router.push(user ? "/chat" : "/login")}
-            style={{
-              padding: "16px 40px",
-              fontSize: "1.05rem",
-              boxShadow: "0 0 30px rgba(16,185,129,0.2)",
-            }}
+            onMouseMove={handleMagnetic}
+            onMouseLeave={handleMagneticLeave}
+            style={{ padding: "18px 48px", fontSize: "1.05rem", boxShadow: "0 0 40px rgba(16,185,129,0.2)" }}
           >
-            {user ? "Go to Chat" : "Start Learning Free"}
+            {user ? "Open DAIY" : "Start Free"}
             <ArrowRight size={18} />
           </button>
-          <button
-            className="btn-secondary"
-            onClick={() => {
-              document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
-            }}
-            style={{ padding: "16px 36px", fontSize: "1.05rem" }}
-          >
-            See How It Works
-          </button>
-        </div>
-
-        {/* Scroll indicator */}
-        <div
-          className="animate-float"
-          style={{
-            position: "absolute",
-            bottom: 40,
-            left: "50%",
-            transform: "translateX(-50%)",
-            color: "var(--text-muted)",
-            opacity: Math.max(0, 1 - scrollY / 200),
-            transition: "opacity 0.2s",
-          }}
-        >
-          <ChevronDown size={24} />
         </div>
       </section>
 
-      {/* ============ LIVE DEMO SECTION ============ */}
-      <section style={{ padding: "80px 24px 100px", position: "relative" }}>
-        <div className="section-divider" style={{ marginBottom: "80px" }} />
-        <div style={{
-          maxWidth: 1100, margin: "0 auto",
-          display: "flex", alignItems: "center", gap: "60px",
-          flexWrap: "wrap", justifyContent: "center",
+      {/* ============ PHILOSOPHY — word-by-word scroll reveal ============ */}
+      <section ref={philosophyRef} style={{
+        padding: "160px 24px", maxWidth: 900, margin: "0 auto",
+      }}>
+        <p ref={philosophyTextRef} style={{
+          fontSize: "clamp(1.5rem, 3.5vw, 2.5rem)",
+          fontWeight: 600,
+          lineHeight: 1.4,
+          letterSpacing: "-0.02em",
+          color: "var(--text-primary)",
         }}>
-          <div style={{ flex: "1 1 400px", maxWidth: 460 }}>
-            <div
-              ref={howItWorks.ref}
-              className={howItWorks.isVisible ? "animate-fade-up" : ""}
-              style={{ opacity: howItWorks.isVisible ? 1 : 0 }}
-            >
-              <span style={{
-                fontSize: "0.75rem", fontWeight: 600, color: "var(--accent)",
-                textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "12px", display: "block",
-              }}>
-                See it in action
-              </span>
-              <h2 style={{
-                fontSize: "2rem", fontWeight: 700, letterSpacing: "-0.02em",
-                marginBottom: "16px", lineHeight: 1.2,
-              }}>
-                A conversation, not a lecture
-              </h2>
-              <p style={{
-                color: "var(--text-secondary)", fontSize: "1.05rem",
-                lineHeight: 1.7, marginBottom: "32px",
-              }}>
-                DAIY doesn&apos;t hand you answers. It asks the right questions at the right time,
-                guiding you to that breakthrough moment where everything clicks.
-              </p>
+          {philosophyWords.map((word, i) => (
+            <span key={i} className="reveal-word" style={{
+              display: "inline-block",
+              marginRight: "0.3em",
+              opacity: 0.15,
+              transition: "opacity 0.1s",
+            }}>
+              {word}
+            </span>
+          ))}
+        </p>
+      </section>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                {[
-                  { icon: <Target size={18} />, text: "Identifies your exact knowledge gap" },
-                  { icon: <Zap size={18} />, text: "Challenges assumptions you didn't know you had" },
-                  { icon: <Trophy size={18} />, text: "Celebrates when YOU find the answer" },
-                ].map((item, i) => (
-                  <div key={i} style={{
-                    display: "flex", alignItems: "center", gap: "12px",
-                    color: "var(--text-secondary)", fontSize: "0.95rem",
-                  }}>
-                    <div style={{
-                      width: 36, height: 36, borderRadius: "var(--radius-sm)",
-                      background: "var(--accent-muted)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      color: "var(--accent)", flexShrink: 0,
-                    }}>
-                      {item.icon}
-                    </div>
-                    {item.text}
-                  </div>
-                ))}
-              </div>
-            </div>
+      {/* ============ DEMO ============ */}
+      <section ref={demoSectionRef} style={{ padding: "100px 24px 120px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
+          <div ref={demoTextRef} style={{ marginBottom: "48px" }}>
+            <h2 style={{ fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1.1 }}>
+              A conversation,{" "}
+              <span className="gradient-text-animated">not a lecture.</span>
+            </h2>
+          </div>
+          <div ref={demoChatRef} style={{ display: "flex", justifyContent: "center" }}>
+            <TypingDemo />
+          </div>
+        </div>
+      </section>
+
+      {/* ============ HORIZONTAL SCROLL — Typographic Panels ============ */}
+      <section ref={horizontalRef} style={{
+        height: "100vh", overflow: "hidden", position: "relative",
+        borderTop: "1px solid rgba(255,255,255,0.04)",
+        borderBottom: "1px solid rgba(255,255,255,0.04)",
+      }}>
+        <div ref={horizontalTrackRef} style={{
+          display: "flex", alignItems: "stretch",
+          height: "100%",
+          width: "max-content",
+        }}>
+          {/* Opening panel */}
+          <div style={{
+            minWidth: "100vw", display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center",
+            padding: "0 8vw", flexShrink: 0,
+          }}>
+            <h2 style={{
+              fontSize: "clamp(2.5rem, 6vw, 5rem)", fontWeight: 800,
+              letterSpacing: "-0.04em", lineHeight: 1, textAlign: "center",
+            }}>
+              DAIY asks the{" "}
+              <span className="gradient-text-animated">right questions.</span>
+            </h2>
           </div>
 
-          {/* Live Demo Chat */}
-          <DemoChat />
-        </div>
-      </section>
-
-      {/* ============ HOW IT WORKS ============ */}
-      <section
-        id="how-it-works"
-        className="landing-section"
-        style={{ padding: "100px 24px", maxWidth: 1100, margin: "0 auto" }}
-      >
-        <div
-          ref={features.ref}
-          style={{ textAlign: "center", marginBottom: "72px" }}
-          className={features.isVisible ? "animate-fade-up" : ""}
-        >
-          <h2 style={{
-            fontSize: "2.25rem", fontWeight: 700,
-            letterSpacing: "-0.02em", marginBottom: "16px",
-          }}>
-            Three steps to{" "}
-            <span className="gradient-text-animated">real understanding</span>
-          </h2>
-          <p style={{
-            color: "var(--text-secondary)", fontSize: "1.1rem",
-            maxWidth: 500, margin: "0 auto",
-          }}>
-            The Socratic method, powered by AI
-          </p>
-        </div>
-
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-          gap: "24px",
-        }}>
-          {[
-            {
-              step: "01",
-              icon: <MessageSquare size={28} />,
-              title: "Ask Your Question",
-              desc: "Paste your code, describe your problem, or share any question. DAIY adapts to coding, math, writing, science, and beyond.",
-              delay: "0s",
-            },
-            {
-              step: "02",
-              icon: <Brain size={28} />,
-              title: "Think Deeper",
-              desc: "DAIY asks targeted questions that challenge your assumptions. With Deep Thinking mode, it analyzes your problem through multiple reasoning passes.",
-              delay: "0.15s",
-            },
-            {
-              step: "03",
-              icon: <Lightbulb size={28} />,
-              title: "Own Your Breakthrough",
-              desc: "When you discover the answer yourself, it truly sticks. DAIY celebrates your breakthrough — you earned that knowledge.",
-              delay: "0.3s",
-            },
-          ].map((item, i) => (
-            <div
-              key={i}
-              className={`landing-card ${features.isVisible ? "animate-fade-up" : ""}`}
-              style={{
-                padding: "40px 32px",
-                textAlign: "center",
-                animationDelay: item.delay,
-                opacity: features.isVisible ? 1 : 0,
-              }}
-            >
+          {/* Subject panels */}
+          {panels.map((panel, i) => (
+            <div key={i} style={{
+              minWidth: "80vw", display: "flex", alignItems: "center",
+              padding: "0 8vw", flexShrink: 0,
+              position: "relative",
+            }}>
+              {/* Vertical accent line */}
               <div style={{
-                fontSize: "3rem", fontWeight: 800,
-                color: "rgba(16,185,129,0.1)",
-                lineHeight: 1, marginBottom: "16px",
-                fontFamily: "'JetBrains Mono', monospace",
-              }}>
-                {item.step}
-              </div>
-              <div style={{
-                width: 60, height: 60,
-                borderRadius: "var(--radius-md)",
-                background: "var(--accent-muted)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                margin: "0 auto 20px",
-                color: "var(--accent)",
-              }}>
-                {item.icon}
-              </div>
-              <h3 style={{ fontSize: "1.2rem", fontWeight: 600, marginBottom: "12px" }}>
-                {item.title}
-              </h3>
-              <p style={{ color: "var(--text-secondary)", lineHeight: 1.7, fontSize: "0.95rem" }}>
-                {item.desc}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
+                width: 3, height: "40%", borderRadius: 2,
+                background: panel.color, opacity: 0.6,
+                position: "absolute", left: "4vw", top: "30%",
+              }} />
 
-      {/* ============ FEATURES GRID ============ */}
-      <section style={{ padding: "60px 24px 100px", maxWidth: 1100, margin: "0 auto" }}>
-        <div className="section-divider" style={{ marginBottom: "80px" }} />
-
-        <div style={{ textAlign: "center", marginBottom: "64px" }}>
-          <h2 style={{
-            fontSize: "2.25rem", fontWeight: 700,
-            letterSpacing: "-0.02em", marginBottom: "16px",
-          }}>
-            Works across{" "}
-            <span className="gradient-text-animated">every field</span>
-          </h2>
-          <p style={{
-            color: "var(--text-secondary)", fontSize: "1.1rem",
-            maxWidth: 480, margin: "0 auto",
-          }}>
-            One tool, any subject. DAIY adapts its Socratic approach to your domain.
-          </p>
-        </div>
-
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-          gap: "16px",
-        }}>
-          {[
-            {
-              icon: <Code2 size={22} />,
-              title: "Coding & CS",
-              desc: "Debug errors, design algorithms, understand architecture patterns",
-              color: "#3B82F6",
-            },
-            {
-              icon: <FlaskConical size={22} />,
-              title: "Math & Science",
-              desc: "Solve proofs, grasp concepts, work through problem sets",
-              color: "#8B5CF6",
-            },
-            {
-              icon: <PenTool size={22} />,
-              title: "Writing & Essays",
-              desc: "Strengthen arguments, improve clarity, develop your thesis",
-              color: "#F59E0B",
-            },
-            {
-              icon: <BookOpen size={22} />,
-              title: "Any Subject",
-              desc: "Law, philosophy, medicine, business — if it can be taught, DAIY can guide",
-              color: "#10B981",
-            },
-          ].map((feature, i) => (
-            <div
-              key={i}
-              className="landing-card"
-              style={{ padding: "28px 24px", display: "flex", gap: "16px", alignItems: "flex-start" }}
-            >
-              <div style={{
-                width: 44, height: 44,
-                borderRadius: "var(--radius-sm)",
-                background: `${feature.color}15`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: feature.color, flexShrink: 0,
-              }}>
-                {feature.icon}
-              </div>
-              <div>
-                <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "6px" }}>
-                  {feature.title}
+              <div style={{ paddingLeft: "4vw" }}>
+                {/* Large subject name */}
+                <h3 style={{
+                  fontSize: "clamp(4rem, 10vw, 9rem)", fontWeight: 800,
+                  letterSpacing: "-0.05em", lineHeight: 0.9,
+                  color: panel.color, opacity: 0.15,
+                  marginBottom: "24px",
+                  userSelect: "none",
+                }}>
+                  {panel.title}
                 </h3>
-                <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", lineHeight: 1.6 }}>
-                  {feature.desc}
+
+                {/* The question DAIY would ask */}
+                <p style={{
+                  fontSize: "clamp(1.3rem, 2.5vw, 2rem)",
+                  fontWeight: 500,
+                  color: "var(--text-primary)",
+                  fontStyle: "italic",
+                  lineHeight: 1.4,
+                  maxWidth: 600,
+                  letterSpacing: "-0.01em",
+                }}>
+                  &ldquo;{panel.question}&rdquo;
+                </p>
+
+                {/* Subtle label */}
+                <p style={{
+                  fontSize: "0.75rem", color: "var(--text-muted)",
+                  textTransform: "uppercase", letterSpacing: "0.12em",
+                  marginTop: "20px", fontWeight: 500,
+                }}>
+                  — DAIY would ask
                 </p>
               </div>
             </div>
@@ -668,149 +609,109 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ============ KEY DIFFERENTIATORS ============ */}
-      <section style={{ padding: "60px 24px 100px", maxWidth: 900, margin: "0 auto" }}>
-        <div className="section-divider" style={{ marginBottom: "80px" }} />
-
-        <div
-          ref={stats.ref}
-          style={{ textAlign: "center", marginBottom: "64px" }}
-          className={stats.isVisible ? "animate-fade-up" : ""}
-        >
-          <h2 style={{
-            fontSize: "2rem", fontWeight: 700,
-            letterSpacing: "-0.02em", marginBottom: "16px",
-          }}>
-            Why DAIY is different
-          </h2>
-          <p style={{
-            color: "var(--text-secondary)", fontSize: "1.05rem",
-            maxWidth: 500, margin: "0 auto",
-          }}>
-            Built for learning, not for shortcuts
-          </p>
-        </div>
-
+      {/* ============ SLOGAN MARQUEE ============ */}
+      <div style={{ overflow: "hidden", position: "relative", height: 220 }}>
         <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-          gap: "24px",
+          padding: "40px 0",
+          transform: "rotate(-3deg)",
+          position: "absolute",
+          top: 0, left: "-10%",
+          width: "120%",
+          willChange: "transform",
         }}>
-          {[
-            {
-              icon: <Shield size={20} />,
-              title: "Never Gives Answers",
-              desc: "DAIY is architecturally prevented from giving direct answers. It can only guide.",
-            },
-            {
-              icon: <Brain size={20} />,
-              title: "Deep Thinking Mode",
-              desc: "Three-pass analysis that forces even fast models to reason deeply about your problem.",
-            },
-            {
-              icon: <Zap size={20} />,
-              title: "Free to Start",
-              desc: "Llama 3.3 70B on Groq is completely free. Bring your own keys for GPT-4 or Claude.",
-            },
-            {
-              icon: <Clock size={20} />,
-              title: "Reasoning Timeline",
-              desc: "Watch your learning journey unfold — from first question to breakthrough.",
-            },
-            {
-              icon: <Users size={20} />,
-              title: "Any Learner",
-              desc: "From first-year students to experienced developers. DAIY adapts to your level.",
-            },
-            {
-              icon: <CheckCircle size={20} />,
-              title: "Privacy First",
-              desc: "Session-only API keys, no tracking. Your learning data stays yours.",
-            },
-          ].map((item, i) => (
-            <div
-              key={i}
-              className={stats.isVisible ? "animate-fade-up" : ""}
-              style={{
-                padding: "24px",
-                animationDelay: `${i * 0.1}s`,
-                opacity: stats.isVisible ? 1 : 0,
-              }}
-            >
-              <div style={{
-                width: 40, height: 40,
-                borderRadius: "var(--radius-sm)",
-                background: "var(--accent-muted)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: "var(--accent)", marginBottom: "14px",
-              }}>
-                {item.icon}
-              </div>
-              <h3 style={{ fontSize: "0.95rem", fontWeight: 600, marginBottom: "8px" }}>
-                {item.title}
-              </h3>
-              <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", lineHeight: 1.6 }}>
-                {item.desc}
-              </p>
-            </div>
-          ))}
+          {/* Row 1 — scrolls left */}
+          <div className="marquee-track" style={{ marginBottom: "4px" }}>
+            {[...Array(6)].map((_, setIndex) => (
+              <span key={setIndex} style={{ display: "flex", alignItems: "center", whiteSpace: "nowrap" }}>
+                {["DISCOVER", "ADAPT", "INVENT", "YOURSELF"].map((word, i) => (
+                  <span key={`${setIndex}-${i}`} style={{ display: "flex", alignItems: "center" }}>
+                    <span style={{
+                      fontSize: "clamp(2.5rem, 5vw, 4rem)",
+                      fontWeight: 800,
+                      color: "white",
+                      letterSpacing: "-0.03em",
+                      padding: "0 20px",
+                    }}>
+                      {word}
+                    </span>
+                    <span style={{
+                      fontSize: "clamp(1.2rem, 2.5vw, 2rem)",
+                      color: "var(--accent)",
+                      padding: "0 12px",
+                      opacity: 0.5,
+                    }}>
+                      ·
+                    </span>
+                  </span>
+                ))}
+              </span>
+            ))}
+          </div>
+
+          {/* Row 2 — scrolls right */}
+          <div className="marquee-track-reverse">
+            {[...Array(6)].map((_, setIndex) => (
+              <span key={setIndex} style={{ display: "flex", alignItems: "center", whiteSpace: "nowrap" }}>
+                {["DISCOVER", "ADAPT", "INVENT", "YOURSELF"].map((word, i) => (
+                  <span key={`r${setIndex}-${i}`} style={{ display: "flex", alignItems: "center" }}>
+                    <span style={{
+                      fontSize: "clamp(2.5rem, 5vw, 4rem)",
+                      fontWeight: 800,
+                      color: "rgba(255,255,255,0.15)",
+                      letterSpacing: "-0.03em",
+                      padding: "0 20px",
+                    }}>
+                      {word}
+                    </span>
+                    <span style={{
+                      fontSize: "clamp(1.2rem, 2.5vw, 2rem)",
+                      color: "var(--accent)",
+                      padding: "0 12px",
+                      opacity: 0.2,
+                    }}>
+                      ·
+                    </span>
+                  </span>
+                ))}
+              </span>
+            ))}
+          </div>
         </div>
-      </section>
+      </div>
 
-      {/* ============ CTA SECTION ============ */}
-      <section
-        style={{
-          padding: "100px 24px",
-          textAlign: "center",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <div className="section-divider" style={{ marginBottom: "80px" }} />
-
-        {/* Background glow */}
+      {/* ============ CTA ============ */}
+      <section style={{ padding: "120px 24px 100px", position: "relative", overflow: "hidden" }}>
+        {/* Glow */}
         <div style={{
           position: "absolute", top: "50%", left: "50%",
           transform: "translate(-50%, -50%)",
           width: 600, height: 600, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(16,185,129,0.08), transparent 70%)",
-          filter: "blur(80px)",
+          background: "radial-gradient(circle, rgba(16,185,129,0.08), transparent 65%)",
+          filter: "blur(60px)", pointerEvents: "none",
         }} />
 
-        <div
-          ref={cta.ref}
-          className={cta.isVisible ? "animate-fade-up" : ""}
-          style={{ opacity: cta.isVisible ? 1 : 0, position: "relative" }}
-        >
-          <DaiyLogo size={56} className="hero-logo-animate" style={{
-            marginBottom: "28px",
-            filter: "drop-shadow(0 0 20px rgba(16,185,129,0.3))",
-          }} />
-
+        <div ref={ctaRef} style={{
+          position: "relative", maxWidth: 600, margin: "0 auto", textAlign: "center",
+        }}>
           <h2 style={{
-            fontSize: "2.5rem", fontWeight: 700,
-            letterSpacing: "-0.02em", marginBottom: "20px",
+            fontSize: "clamp(2.2rem, 5vw, 3.8rem)", fontWeight: 700,
+            letterSpacing: "-0.04em", marginBottom: "40px", lineHeight: 1.1,
           }}>
-            Ready to actually{" "}
-            <span className="gradient-text-animated">learn</span>?
+            Ready to{" "}
+            <span className="gradient-text-animated">think</span>?
           </h2>
-          <p style={{
-            color: "var(--text-secondary)", fontSize: "1.15rem",
-            marginBottom: "40px", maxWidth: 480, margin: "0 auto 40px",
-            lineHeight: 1.7,
-          }}>
-            Stop collecting answers you&apos;ll forget tomorrow.
-            Start building understanding that lasts.
-          </p>
+
           <button
             className="btn-primary"
             onClick={() => router.push(user ? "/chat" : "/login")}
+            onMouseMove={handleMagnetic}
+            onMouseLeave={handleMagneticLeave}
             style={{
-              padding: "16px 48px", fontSize: "1.1rem",
-              boxShadow: "0 0 40px rgba(16,185,129,0.15)",
+              padding: "18px 52px", fontSize: "1.1rem",
+              boxShadow: "0 0 50px rgba(16,185,129,0.2), 0 0 100px rgba(16,185,129,0.08)",
             }}
           >
-            {user ? "Open DAIY" : "Start Learning — It's Free"}
+            {user ? "Open DAIY" : "Get Started"}
             <ArrowRight size={20} />
           </button>
         </div>
@@ -819,21 +720,13 @@ export default function LandingPage() {
       {/* ============ FOOTER ============ */}
       <footer className="landing-footer" style={{
         borderTop: "1px solid var(--border-default)",
-        padding: "40px 24px",
-        textAlign: "center",
-        color: "var(--text-muted)",
-        fontSize: "0.875rem",
+        padding: "40px 24px", textAlign: "center",
+        color: "var(--text-muted)", fontSize: "0.875rem",
       }}>
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "center",
-          gap: "10px", marginBottom: "12px",
-        }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", marginBottom: "12px" }}>
           <DaiyLogo size={20} />
           <span style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.95rem" }}>DAIY</span>
         </div>
-        <p style={{ color: "var(--text-muted)", marginBottom: "4px" }}>
-          Discover &bull; Adapt &bull; Invent &bull; Yourself
-        </p>
         <p style={{ fontSize: "0.8rem" }}>
           &copy; {new Date().getFullYear()} DAIY. All rights reserved.
         </p>

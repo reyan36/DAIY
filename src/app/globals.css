@@ -563,10 +563,13 @@ pre code {
    ============================================================ */
 
 @keyframes thinking-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.6;
     transform: scale(1);
   }
+
   50% {
     opacity: 1;
     transform: scale(1.05);
@@ -574,8 +577,13 @@ pre code {
 }
 
 @keyframes thinking-orbit {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes step-appear {
@@ -583,6 +591,7 @@ pre code {
     opacity: 0;
     transform: translateX(-12px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -590,17 +599,25 @@ pre code {
 }
 
 @keyframes step-dot-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 0 var(--accent-glow);
   }
+
   50% {
     box-shadow: 0 0 8px 2px var(--accent-glow);
   }
 }
 
 @keyframes progress-flow {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  100% {
+    background-position: 200% 50%;
+  }
 }
 
 .thinking-container {
@@ -764,15 +781,19 @@ pre code {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
 }
 
 @keyframes daiy-ring-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     stroke-opacity: 0.7;
   }
+
   50% {
     stroke-opacity: 1;
     filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.4));
@@ -905,26 +926,53 @@ pre code {
    ============================================================ */
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
 .animate-fade-up {
   animation: fade-up 0.8s ease-out both;
 }
 
 @keyframes scale-in {
-  0% { opacity: 0; transform: scale(0.8); }
-  60% { transform: scale(1.02); }
-  100% { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  60% {
+    transform: scale(1.02);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
+
 .animate-scale-in {
   animation: scale-in 0.6s ease-out both;
 }
 
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
 }
+
 .gradient-text-animated {
   background: linear-gradient(135deg, #10B981 0%, #34D399 25%, #6EE7B7 50%, #34D399 75%, #10B981 100%);
   background-size: 200% 200%;
@@ -934,11 +982,88 @@ pre code {
   animation: gradient-shift 4s ease-in-out infinite;
 }
 
-@keyframes ring-pulse {
-  0% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.15); opacity: 0; }
-  100% { transform: scale(1); opacity: 0; }
+@keyframes float-bounce {
+
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(8px);
+  }
 }
+
+.scroll-indicator {
+  animation: float-bounce 2s ease-in-out infinite;
+}
+
+/* Infinite marquee for slogan slider */
+@keyframes marquee-scroll {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 20s linear infinite;
+  contain: layout style;
+  will-change: transform;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-scroll-reverse {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.marquee-track-reverse {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll-reverse 25s linear infinite;
+  contain: layout style;
+  will-change: transform;
+}
+
+.marquee-track-reverse:hover {
+  animation-play-state: paused;
+}
+
+.animate-float {
+  animation: float-bounce 2s ease-in-out infinite;
+}
+
+@keyframes ring-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: scale(1.15);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
 .ring-pulse {
   animation: ring-pulse 2s ease-out infinite;
 }
@@ -951,40 +1076,76 @@ pre code {
   position: relative;
   overflow: hidden;
 }
+
 .landing-card::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 2px;
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
   opacity: 0;
   transition: opacity 0.35s ease;
 }
+
 .landing-card:hover {
   border-color: rgba(16, 185, 129, 0.3);
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(16, 185, 129, 0.08), 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 12px 40px rgba(16, 185, 129, 0.08), 0 4px 12px rgba(0, 0, 0, 0.3);
 }
+
 .landing-card:hover::before {
   opacity: 1;
 }
 
 @keyframes bubble-in-left {
-  from { opacity: 0; transform: translateX(-20px) scale(0.95); }
-  to { opacity: 1; transform: translateX(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
 }
+
 @keyframes bubble-in-right {
-  from { opacity: 0; transform: translateX(20px) scale(0.95); }
-  to { opacity: 1; transform: translateX(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateX(20px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
 }
-.bubble-left { animation: bubble-in-left 0.5s ease-out both; }
-.bubble-right { animation: bubble-in-right 0.5s ease-out both; }
+
+.bubble-left {
+  animation: bubble-in-left 0.5s ease-out both;
+}
+
+.bubble-right {
+  animation: bubble-in-right 0.5s ease-out both;
+}
 
 @keyframes count-up {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.count-animate { animation: count-up 0.6s ease-out both; }
+
+.count-animate {
+  animation: count-up 0.6s ease-out both;
+}
 
 .nav-scrolled {
   backdrop-filter: blur(20px) !important;
@@ -993,10 +1154,21 @@ pre code {
 }
 
 @keyframes hero-logo-enter {
-  0% { transform: scale(0.5) rotate(-180deg); opacity: 0; }
-  60% { transform: scale(1.1) rotate(10deg); }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  0% {
+    transform: scale(0.5) rotate(-180deg);
+    opacity: 0;
+  }
+
+  60% {
+    transform: scale(1.1) rotate(10deg);
+  }
+
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
 }
+
 .hero-logo-animate {
   animation: hero-logo-enter 1s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
@@ -1050,13 +1222,27 @@ pre code {
 }
 
 @keyframes toast-slide-in {
-  from { transform: translateX(100%) scale(0.8); opacity: 0; }
-  to { transform: translateX(0) scale(1); opacity: 1; }
+  from {
+    transform: translateX(100%) scale(0.8);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes toast-slide-out {
-  from { transform: translateX(0) scale(1); opacity: 1; }
-  to { transform: translateX(100%) scale(0.8); opacity: 0; }
+  from {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+
+  to {
+    transform: translateX(100%) scale(0.8);
+    opacity: 0;
+  }
 }
 
 .toast-icon {
@@ -1065,15 +1251,37 @@ pre code {
   align-items: center;
 }
 
-.toast-success .toast-icon { color: var(--accent); }
-.toast-error .toast-icon { color: var(--color-error); }
-.toast-warning .toast-icon { color: #F59E0B; }
-.toast-info .toast-icon { color: #3B82F6; }
+.toast-success .toast-icon {
+  color: var(--accent);
+}
 
-.toast-success { border-left: 3px solid var(--accent); }
-.toast-error { border-left: 3px solid var(--color-error); }
-.toast-warning { border-left: 3px solid #F59E0B; }
-.toast-info { border-left: 3px solid #3B82F6; }
+.toast-error .toast-icon {
+  color: var(--color-error);
+}
+
+.toast-warning .toast-icon {
+  color: #F59E0B;
+}
+
+.toast-info .toast-icon {
+  color: #3B82F6;
+}
+
+.toast-success {
+  border-left: 3px solid var(--accent);
+}
+
+.toast-error {
+  border-left: 3px solid var(--color-error);
+}
+
+.toast-warning {
+  border-left: 3px solid #F59E0B;
+}
+
+.toast-info {
+  border-left: 3px solid #3B82F6;
+}
 
 .toast-message {
   flex: 1;
@@ -1093,6 +1301,7 @@ pre code {
   justify-content: center;
   transition: all var(--transition-fast);
 }
+
 .toast-close:hover {
   background: var(--bg-tertiary);
   color: var(--text-primary);
@@ -1128,13 +1337,25 @@ pre code {
 }
 
 @keyframes confirm-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes confirm-pop-in {
-  from { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
-  to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  from {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0;
+  }
+
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
 }
 
 .confirm-icon-wrap {
@@ -1177,6 +1398,7 @@ pre code {
   background: var(--bg-tertiary);
   color: var(--text-secondary);
 }
+
 .confirm-btn.cancel:hover {
   background: var(--bg-primary);
   color: var(--text-primary);
@@ -1187,6 +1409,7 @@ pre code {
   color: #fff;
   border-color: var(--color-error);
 }
+
 .confirm-btn.danger:hover {
   background: #DC2626;
   box-shadow: 0 0 16px rgba(239, 68, 68, 0.3);
@@ -1197,6 +1420,7 @@ pre code {
   color: #000;
   border-color: #F59E0B;
 }
+
 .confirm-btn.warning:hover {
   background: #D97706;
 }
@@ -1216,6 +1440,7 @@ pre code {
 }
 
 @media (max-width: 768px) {
+
   /* Toast on mobile */
   .toast-container {
     top: auto;
@@ -1227,12 +1452,27 @@ pre code {
   }
 
   @keyframes toast-slide-in {
-    from { transform: translateY(100%) scale(0.9); opacity: 0; }
-    to { transform: translateY(0) scale(1); opacity: 1; }
+    from {
+      transform: translateY(100%) scale(0.9);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
   }
+
   @keyframes toast-slide-out {
-    from { transform: translateY(0) scale(1); opacity: 1; }
-    to { transform: translateY(100%) scale(0.9); opacity: 0; }
+    from {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+
+    to {
+      transform: translateY(100%) scale(0.9);
+      opacity: 0;
+    }
   }
 
   /* Sidebar as full-screen drawer overlay on mobile */
@@ -1442,14 +1682,29 @@ pre code {
    ============================================================ */
 
 @keyframes voice-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
 }
 
 @keyframes speaker-glow {
-  0%, 100% { filter: drop-shadow(0 0 0px var(--accent)); }
-  50% { filter: drop-shadow(0 0 6px var(--accent)); }
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0px var(--accent));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 6px var(--accent));
+  }
 }
 
 .voice-btn {
@@ -1497,7 +1752,7 @@ pre code {
 }
 
 /* Show on message hover */
-.markdown-content:hover ~ .tts-btn,
+.markdown-content:hover~.tts-btn,
 .tts-btn:hover,
 .tts-btn.speaking {
   opacity: 1;
