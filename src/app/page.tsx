@@ -491,6 +491,18 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ============ VIDEO EMBED ============ */}
+      <section style={{ padding: "0 24px", maxWidth: 1000, margin: "0 auto", marginTop: "-40px", marginBottom: "80px", position: "relative", zIndex: 10 }}>
+        <div style={{ borderRadius: 16, overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 30px 60px rgba(0,0,0,0.5), 0 0 40px rgba(16,185,129,0.1)" }}>
+          <iframe
+            src="https://player.mux.com/r6ilC9gijIkNhR1DgJ97juWD01wfDTioUPv3KPEtlMjI?metadata-video-title=Daiy+Video&video-title=Daiy+Video&accent-color=%2311c05d&primary-color=%23ffffff&loop=true&autoplay=true&muted=true"
+            style={{ width: "100%", border: "none", aspectRatio: "16/9", display: "block" }}
+            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+            allowFullScreen
+          ></iframe>
+        </div>
+      </section>
+
       {/* ============ PHILOSOPHY — word-by-word scroll reveal ============ */}
       <section ref={philosophyRef} style={{
         padding: "160px 24px", maxWidth: 900, margin: "0 auto",
